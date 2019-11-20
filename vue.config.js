@@ -12,7 +12,7 @@ const UglifyJsPlugin = require("uglifyjs-webpack-plugin");
 // 代码压缩
 // const CompressionPlugin = require('compression-webpack-plugin');
 
-const utils = require('./config-util');
+const utils = require('./config/config-util');
 
 let {pages} = utils.getPages();
 
