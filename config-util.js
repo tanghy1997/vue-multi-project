@@ -45,12 +45,3 @@ exports.getPages = function() {
     // console.log('这是分页配置', {pages, entries})
     return {pages, entries};
 }
-
-exports.assetsPath = function (_path) {
-    const assetsSubDirectory = process.env.NODE_ENV === 'production'
-      ? 'static'
-      : 'static'
-  
-    return path.posix.join(assetsSubDirectory, _path)
-}
-  

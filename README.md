@@ -1,29 +1,22 @@
 # common-h5-webpack4
+> 项目是基于Vue-cli3和webpack4搭建的多入口项目，通过在entry-page中配置来动态打包,项目中css默认node-sass
 
-## Project setup
+## 安装依赖项
 ```
 yarn install
 ```
 
-### Compiles and hot-reloads for development
+### 本地开发环境development
 ```
 yarn run serve
 ```
 
-### Compiles and minifies for production
+### 测试环境打包
 ```
-yarn run build
-```
-
-### Run your tests
-```
-yarn run test
+npm run build:stage
 ```
 
-### Lints and fixes files
+### 生产环境打包
 ```
-yarn run lint
+npm run build:prod
 ```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).

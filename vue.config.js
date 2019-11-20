@@ -8,7 +8,9 @@ const glob = require('glob');
 //压缩代码并去掉console
 const UglifyJsPlugin = require("uglifyjs-webpack-plugin");
 // 它会将所有的入口 chunk(entry chunks)中引用的 *.css，移动到独立分离的 CSS 文件
-const ExtractTextPlugin = require("extract-text-webpack-plugin");
+// const ExtractTextPlugin = require("extract-text-webpack-plugin");
+// 代码压缩
+// const CompressionPlugin = require('compression-webpack-plugin');
 
 const utils = require('./config-util');
 
@@ -16,8 +18,8 @@ let {pages} = utils.getPages();
 
 module.exports = {
     lintOnSave: false, //禁用eslint
-    publicPath: process.env.NODE_ENV === 'production'
-    ? './'
+    publicPath: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging'
+    ? '../'
     : '/',
     outputDir: './dist', //也可加标识，动态打包到相关文件夹
     //打包文件是否使用hash
@@ -65,8 +67,12 @@ module.exports = {
     chainWebpack: config => {
         //添加别名
         config.resolve.alias
-        .set("@", resolve("src"))
-        .set("static", resolve("src/static"));
+            .set("@", resolve("src"))
+            .set("static", resolve("src/static"));
+
+        config.output
+            .filename('static/js/[name].[hash].js')
+            .chunkFilename('static/js/[name].[chunkhash].js');
 
 		config.module
 			.rule('images')
@@ -76,63 +82,59 @@ module.exports = {
 				// 修改它的选项...
 				options.limit = 100
 				return options
-			})
+            })
+        // 取消预加载
 		Object.keys(pages).forEach(entryName => {
 			config.plugins.delete(`prefetch-${entryName}`);
 		});
-		if(process.env.NODE_ENV === "production") {
-			config.plugin("extract-css").tap(() => [{
-				path: path.join(__dirname, "./dist"),
-				filename: "css/[name].[contenthash:8].css"
-			}]);
-		}
+		// if(process.env.NODE_ENV === "production") {
+		// 	config.plugin("extract-css").tap(() => [{
+		// 		path: path.join(__dirname, "./dist"),
+		// 		filename: "css/[name].[contenthash:8].css"
+		// 	}]);
+		// }
 	},
     configureWebpack: config => {
+        // 生产和测试环境
+        let pluginsPro = [
+			// new CompressionPlugin({ //文件开启Gzip，也可以通过服务端(如：nginx)(https://github.com/webpack-contrib/compression-webpack-plugin)
+			// 	filename: '[path].gz[query]',
+			// 	algorithm: 'gzip',
+			// 	test: new RegExp('\\.(' + ['js', 'css'].join('|') + ')$', ),
+			// 	threshold: 8192,
+			// 	minRatio: 0.8,
+			// }),
+            // 代码压缩
+            new UglifyJsPlugin({
+                uglifyOptions: {
+                    compress: {
+                        drop_console: true,
+                        drop_debugger: false,
+                        pure_funcs: ["console.log"] //移除console
+                    }
+                },
+                sourceMap: false,
+                parallel: true
+            })
+        ];
+        //开发环境
+		let pluginsDev = [
+			//移动端模拟开发者工具(https://github.com/diamont1001/vconsole-webpack-plugin  https://github.com/Tencent/vConsole)
+			// new vConsolePlugin({
+			// 	filter: [], // 需要过滤的入口文件
+			// 	enable: true // 发布代码前记得改回 false
+			// }),
+		];
         if (process.env.NODE_ENV === 'production') {
             // 为生产环境修改配置...
-            //启用代码压缩
-            plugins: [
-                new UglifyJsPlugin({
-                    uglifyOptions: {
-                        compress: {
-                            warnings: false,
-                            drop_console: true,
-                            drop_debugger: false,
-                            pure_funcs: ["console.log"] //移除console
-                        }
-                    },
-                    sourceMap: false,
-                    parallel: true
-                }),
-                new ExtractTextPlugin({
-                    filename: utils.assetsPath('css/[name].[contenthash].css'),
-                    allChunks: true
-                })
-            ];
+            config.plugins = [...config.plugins, ...pluginsPro];
         } else if(process.env.NODE_ENV === 'staging') {
             console.log('这次走的是测试')
             // 为测试环境修改配置...
-            //启用代码压缩
-            plugins: [
-                new UglifyJsPlugin({
-                    uglifyOptions: {
-                        compress: {
-                            warnings: false,
-                            drop_console: true,
-                            drop_debugger: false,
-                            pure_funcs: ["console.log"] //移除console
-                        }
-                    },
-                    sourceMap: false,
-                    parallel: true
-                }),
-                new ExtractTextPlugin({
-                    filename: utils.assetsPath('css/[name].[contenthash].css'),
-                    allChunks: true
-                })
-            ];
+            config.plugins = [...config.plugins, ...pluginsPro];
         }else{
           // 开发环境配置
+            config.plugins = [...config.plugins, ...pluginsDev];
         }
     }
 }
